@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Lottery Number Generator</title>
+</head>
+<body>
+    <h1>Your Unique Lottery Numbers</h1>
+    <ul>
+        {% for set in sets %}
+            <li>{{ set|join:", " }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

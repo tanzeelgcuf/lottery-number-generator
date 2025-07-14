@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Lottery Number Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding-top: 2rem;
+        }
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        .header-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        .stats-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 1rem;
+            margin: 0.5rem;
+            text-align: center;
+        }
+        .lottery-number {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #007bff;
+            color: white;
+            text-align: center;
+            line-height: 40px;
+            margin-right: 5px;
+            font-weight: bold;
+        }
+        .mega-ball {
+            background-color: #dc3545;
+        }
+        .power-ball {
+            background-color: #fd7e14;
+        }
+        .feature-card {
+            transition: transform 0.3s ease;
+            border: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+        }
+        .nav-tabs .nav-link.active {
+            background-color: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+            border: none;
+        }
+        .btn-info {
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    {% if messages %}
+        <div class="container mb-3">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="container main-container">
+        <div class="header-section">
+            <h1 class="mb-3"><i class="fas fa-dice"></i> Enhanced Lottery Number Generator</h1>
+            <p class="lead">Generate, save, and check lottery combinations with advanced features</p>
+            
+            <!-- Statistics -->
+            <div class="row mt-4">
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <h4>{{ mega_millions_count }}</h4>
+                        <small>Mega Millions Draws</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <h4>{{ powerball_count }}</h4>
+                        <small>Powerball Draws</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <h4>{{ generated_count }}</h4>
+                        <small>Generated Combinations</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <h4>{{ saved_count }}</h4>
+                        <small>Saved Combinations</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-4">
+            <!-- Navigation Tabs -->
+            <ul class="nav nav-tabs mb-4" id="mainTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="generate-tab" data-bs-toggle="tab" data-bs-target="#generate" type="button" role="tab">
+                        <i class="fas fa-random"></i> Generate Numbers
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="import-tab" data-bs-toggle="tab" data-bs-target="#import" type="button" role="tab">
+                        <i class="fas fa-upload"></i> Import Data
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="save-tab" data-bs-toggle="tab" data-bs-target="#save" type="button" role="tab">
+                        <i class="fas fa-save"></i> Save Numbers
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="texas-tab" data-bs-toggle="tab" data-bs-target="#texas" type="button" role="tab">
+                        <i class="fas fa-external-link-alt"></i> Texas Lottery
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="mainTabsContent">
+                <!-- Generate Numbers Tab -->
+                <div class="tab-pane fade show active" id="generate" role="tabpanel">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card feature-card mb-4">
+                                <div class="card-header bg-primary text-white">
+                                    <i class="fas fa-random"></i> Random Generation
+                                </div>
+                                <div class="card-body">
+                                    <form action="{% url 'generate_numbers' %}" method="get">
+                                        <div class="mb-3">
+                                            <label for="game_type" class="form-label">Game Type</label>
+                                            <select class="form-select" id="game_type" name="game_type">
+                                                <option value="mega_millions">Mega Millions</option>
+                                                <option value="powerball">Powerball</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="count" class="form-label">Number of Sets</label>
+                                            <input type="number" class="form-control" id="count" name="count" value="10" min="1" max="100">
+                                        </div>
+                                        <button type="submit" class="btn btn-primary w-100">
+                                            <i class="fas fa-dice"></i> Generate Random Numbers
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card feature-card mb-4">
+                                <div class="card-header bg-success text-white">
+                                    <i class="fas fa-seedling"></i> Seeded Generation
+                                </div>
+                                <div class="card-body">
+                                    <form action="{% url 'generate_numbers' %}" method="get">
+                                        <div class="mb-3">
+                                            <label for="game_type_seeded" class="form-label">Game Type</label>
+                                            <select class="form-select" id="game_type_seeded" name="game_type">
+                                                <option value="mega_millions">Mega Millions</option>
+                                                <option value="powerball">Powerball</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="seed_number" class="form-label">First Number (Seed)</label>
+                                            <input type="number" class="form-control" id="seed_number" name="seed_number" min="1" max="70" placeholder="Enter first number">
+                                            <div class="form-text">Combinations will include this number</div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="count_seeded" class="form-label">Number of Sets</label>
+                                            <input type="number" class="form-control" id="count_seeded" name="count" value="10" min="1" max="100">
+                                        </div>
+                                        <button type="submit" class="btn btn-success w-100">
+                                            <i class="fas fa-seedling"></i> Generate Seeded Numbers
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Import Data Tab -->
+                <div class="tab-pane fade" id="import" role="tabpanel">
+                    <div class="card feature-card">
+                        <div class="card-header bg-info text-white">
+                            <i class="fas fa-upload"></i> Import Lottery Data
+                        </div>
+                        <div class="card-body">
+                            <form action="{% url 'import_data' %}" method="post" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="game_type_import" class="form-label">Game Type</label>
+                                            <select class="form-select" id="game_type_import" name="game_type">
+                                                <option value="mega_millions">Mega Millions</option>
+                                                <option value="powerball">Powerball</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="excel_file" class="form-label">Excel File</label>
+                                            <input type="file" class="form-control" id="excel_file" name="excel_file" accept=".xlsx,.xls">
+                                            <div class="form-text">Upload Excel file with lottery draw history</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="alert alert-info">
+                                            <h6><i class="fas fa-info-circle"></i> File Format Requirements:</h6>
+                                            <ul class="mb-0">
+                                                <li>Excel file (.xlsx or .xls)</li>
+                                                <li>Columns: Draw Date, Winning Numbers, Mega Ball</li>
+                                                <li>Optional: Megaplier, Estimated Jackpot</li>
+                                                <li>Numbers format: "1-2-3-4-5"</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-info">
+                                    <i class="fas fa-upload"></i> Import Data
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Save Numbers Tab -->
+                <div class="tab-pane fade" id="save" role="tabpanel">
+                    <div class="card feature-card">
+                        <div class="card-header bg-warning text-dark">
+                            <i class="fas fa-save"></i> Save Your Numbers
+                        </div>
+                        <div class="card-body">
+                            <form action="{% url 'save_combination' %}" method="post">
+                                {% csrf_token %}
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="combination_name" class="form-label">Combination Name</label>
+                                            <input type="text" class="form-control" id="combination_name" name="combination_name" placeholder="e.g., Lucky Numbers" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="game_type_save" class="form-label">Game Type</label>
+                                            <select class="form-select" id="game_type_save" name="game_type">
+                                                <option value="mega_millions">Mega Millions</option>
+                                                <option value="powerball">Powerball</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="main_numbers" class="form-label">Main Numbers</label>
+                                            <input type="text" class="form-control" id="main_numbers" name="main_numbers" placeholder="e.g., 1, 15, 22, 35, 67" required>
+                                            <div class="form-text">Enter 5 numbers separated by commas</div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="mega_ball" class="form-label">Mega/Power Ball</label>
+                                            <input type="number" class="form-control" id="mega_ball" name="mega_ball" min="1" max="26" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="alert alert-info">
+                                            <h6><i class="fas fa-info-circle"></i> Number Ranges:</h6>
+                                            <p><strong>Mega Millions:</strong></p>
+                                            <ul>
+                                                <li>Main Numbers: 1-70</li>
+                                                <li>Mega Ball: 1-25</li>
+                                            </ul>
+                                            <p><strong>Powerball:</strong></p>
+                                            <ul class="mb-0">
+                                                <li>Main Numbers: 1-69</li>
+                                                <li>Power Ball: 1-26</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="fas fa-save"></i> Save Combination
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Texas Lottery Tab -->
+                <div class="tab-pane fade" id="texas" role="tabpanel">
+                    <div class="card feature-card">
+                        <div class="card-header bg-danger text-white">
+                            <i class="fas fa-external-link-alt"></i> Texas Lottery Integration
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h5><i class="fas fa-link"></i> Quick Links</h5>
+                                    <div class="list-group">
+                                        <a href="https://www.texaslottery.com/export/sites/lottery/Games/Check_Your_Numbers.html#MegaMillions" 
+                                           target="_blank" class="list-group-item list-group-item-action">
+                                            <i class="fas fa-external-link-alt"></i> Check Mega Millions on Texas Lottery
+                                        </a>
+                                        <a href="https://www.texaslottery.com/export/sites/lottery/Games/Check_Your_Numbers.html#Powerball" 
+                                           target="_blank" class="list-group-item list-group-item-action">
+                                            <i class="fas fa-external-link-alt"></i> Check Powerball on Texas Lottery
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <h5><i class="fas fa-sync"></i> Fetch Latest Results</h5>
+                                    <form action="{% url 'texas_lottery_integration' %}" method="get">
+                                        <div class="mb-3">
+                                            <select class="form-select" name="game_type">
+                                                <option value="mega_millions">Mega Millions</option>
+                                                <option value="powerball">Powerball</option>
+                                            </select>
+                                        </div>
+                                        <input type="hidden" name="fetch_latest" value="true">
+                                        <button type="submit" class="btn btn-danger">
+                                            <i class="fas fa-sync"></i> Get Latest Results
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="row mt-4">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-bolt"></i> Quick Actions</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <a href="{% url 'lottery_results' %}" class="btn btn-outline-primary w-100 mb-2">
+                                        <i class="fas fa-chart-line"></i> View Results
+                                    </a>
+                                </div>
+                                <div class="col-md-3">
+                                    <a href="{% url 'saved_combinations' %}" class="btn btn-outline-success w-100 mb-2">
+                                        <i class="fas fa-bookmark"></i> Saved Numbers
+                                    </a>
+                                </div>
+                                <div class="col-md-3">
+                                    <a href="{% url 'export_combinations' %}?format=csv" class="btn btn-outline-info w-100 mb-2">
+                                        <i class="fas fa-download"></i> Export CSV
+                                    </a>
+                                </div>
+                                <div class="col-md-3">
+                                    <a href="{% url 'texas_lottery_integration' %}" class="btn btn-outline-warning w-100 mb-2">
+                                        <i class="fas fa-external-link-alt"></i> Texas Lottery
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Update number ranges based on game type
+        document.addEventListener('DOMContentLoaded', function() {
+            function updateNumberRanges(gameType, seedInput, megaBallInput) {
+                if (gameType === 'mega_millions') {
+                    if (seedInput) {
+                        seedInput.max = 70;
+                        seedInput.placeholder = "Enter number (1-70)";
+                    }
+                    if (megaBallInput) {
+                        megaBallInput.max = 25;
+                    }
+                } else {
+                    if (seedInput) {
+                        seedInput.max = 69;
+                        seedInput.placeholder = "Enter number (1-69)";
+                    }
+                    if (megaBallInput) {
+                        megaBallInput.max = 26;
+                    }
+                }
+            }
+
+            // Handle seeded generation form
+            const gameTypeSeeded = document.getElementById('game_type_seeded');
+            const seedNumber = document.getElementById('seed_number');
+            if (gameTypeSeeded && seedNumber) {
+                gameTypeSeeded.addEventListener('change', function() {
+                    updateNumberRanges(this.value, seedNumber, null);
+                });
+            }
+
+            // Handle save combination form
+            const gameTypeSave = document.getElementById('game_type_save');
+            const megaBall = document.getElementById('mega_ball');
+            if (gameTypeSave && megaBall) {
+                gameTypeSave.addEventListener('change', function() {
+                    updateNumberRanges(this.value, null, megaBall);
+                });
+            }
+        });
+    </script>
+</body>
+</html>

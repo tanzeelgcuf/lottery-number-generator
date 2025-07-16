@@ -1,84 +1,95 @@
-# Lottery Number Generator
+# 🎲 Enhanced Lottery Number Generator
 
-A Django web application that generates unique sets of lottery numbers based on past draws.
+**Advanced lottery number generator with bulk seeded generation, Texas Lottery integration, and modern responsive UI.**
 
-## Features
+[![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://python.org)
+[![Django](https://img.shields.io/badge/django-5.2-green.svg)](https://djangoproject.com)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-- Import historical lottery data from Excel files
-- Generate unique lottery number combinations that haven't been drawn before
-- User-friendly web interface
-- API endpoint for mobile app integration
+## ✨ Enhanced Features
 
-## Installation Guide
+### 🎯 **Bulk Generation with Multiple First Numbers**
+- Generate lottery combinations using multiple seed numbers at once
+- Example: Enter `1, 3, 5` to create Powerball sets starting with each number
+- Perfect for systematic lottery play strategies
+- Visual grouping by seed number for easy organization
 
-Follow these steps to set up and run the Lottery Number Generator project locally:
+### 🌱 **Advanced Seeded Generation**
+- **Single Seed**: Generate combinations starting with one lucky number
+- **Bulk Seeds**: Generate combinations starting with multiple numbers
+- **Seed Tracking**: See which seed number was used for each combination
+- **Smart Validation**: Automatic range checking for different game types
 
-### Prerequisites
+### 💾 **Save & Manage Combinations**
+- Save your favorite lottery combinations with custom names
+- Check saved combinations against historical draws
+- Bulk operations for managing multiple combinations
+- Prize tier calculation and win tracking
 
+### 📊 **Enhanced Export Features**
+- Export combinations to CSV with detailed metadata
+- Filter exports by date range and generation method
+- Track which seed numbers were used
+- Professional formatting with timestamps
+
+### 🏴󠁵󠁳󠁴󠁸󠁿 **Texas Lottery Integration**
+- Direct links to official Texas Lottery checking pages
+- Quick access to Mega Millions and Powerball tools
+- Latest results fetching capabilities
+- Seamless integration with official lottery website
+
+### 🎨 **Modern Responsive UI**
+- Bootstrap 5 with clean, professional design
+- Tabbed navigation for organized workflow
+- Mobile-responsive for all devices
+- Interactive bulk selection and management tools
+- Animated number displays with game-specific styling
+
+---
+
+## 🖥️ **Linux Server Installation Guide**
+
+### **Prerequisites**
+- Ubuntu 18.04+ / CentOS 7+ / Any modern Linux distribution
 - Python 3.8 or higher
-- pip (Python package manager)
 - Git
+- Internet connection
 
-### Step 1: Clone the Repository
+### **Step 1: System Dependencies**
 
+#### **For Ubuntu/Debian:**
 ```bash
+# Update package list
+sudo apt update
+
+# Install Python, pip, and git
+sudo apt install python3 python3-pip python3-venv git -y
+
+# Verify installations
+python3 --version
+pip3 --version
+git --version
+For CentOS/RHEL:
+bash# Install Python, pip, and git
+sudo yum install python3 python3-pip git -y
+
+# Or for newer versions:
+sudo dnf install python3 python3-pip git -y
+
+# Verify installations
+python3 --version
+pip3 --version
+git --version
+Step 2: Clone Repository
+bash# Remove any existing version
+rm -rf lottery-number-generator
+
+# Clone the enhanced repository
 git clone https://github.com/tanzeelgcuf/lottery-number-generator.git
+
+# Navigate to project directory
 cd lottery-number-generator
-Step 2: Create a Virtual Environment
-On Windows:
-bashpython -m venv venv
-venv\Scripts\activate
-On macOS/Linux:
-bashpython3 -m venv venv
-source venv/bin/activate
-Step 3: Install Dependencies
-bashpip install -r requirements.txt
-Step 4: Set Up the Database
-bashpython manage.py migrate
-Step 5: Create a Media Directory
-bashmkdir -p media
-Step 6: Run the Development Server
-bashpython manage.py runserver
-The application will be available at http://127.0.0.1:8000/
-Usage Instructions
 
-Import Lottery Data:
-
-Click on the "Import Data" section
-Upload your Excel file containing historical lottery data
-The file should have columns for Draw Date, Winning Numbers, and Mega Ball
-
-
-Generate Unique Lottery Numbers:
-
-Select the number of combinations you want to generate
-Click "Generate Numbers"
-The application will display unique number combinations not found in past draws
-
-
-View Results:
-
-Generated combinations will be displayed with main numbers and the Mega Ball
-Each combination is guaranteed to be unique and not previously drawn
-
-
-
-Project Structure
-
-lottery_project/: Main Django project folder
-lottery_generator/: The lottery application
-
-models.py: Database models for lottery data
-views.py: View functions for handling requests
-utils.py: Utility functions for lottery number generation
-templates/: HTML templates for the web interface
-
-
-
-Development
-To contribute to this project:
-
-Fork the repository
-Create a feature branch
-Make your changes
-Submit a pull request
+# Verify project structure
+ls -la
+EPF

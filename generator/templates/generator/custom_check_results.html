@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Number Check Results</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding-top: 2rem;
+        }
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        .header-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+        }
+        .lottery-number {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #007bff;
+            color: white;
+            text-align: center;
+            line-height: 40px;
+            margin-right: 5px;
+            font-weight: bold;
+        }
+        .mega-ball {
+            background-color: #dc3545;
+        }
+        .power-ball {
+            background-color: #fd7e14;
+        }
+        .matched-number {
+            background-color: #28a745;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .prize-tier {
+            font-weight: bold;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+        }
+        .tier-jackpot { background-color: #ffd700; color: #000; }
+        .tier-match5 { background-color: #ff6b6b; color: #fff; }
+        .tier-match4 { background-color: #4ecdc4; color: #fff; }
+        .tier-match3 { background-color: #45b7d1; color: #fff; }
+        .tier-match2 { background-color: #96ceb4; color: #000; }
+        .tier-match1 { background-color: #ffeaa7; color: #000; }
+        .tier-mega { background-color: #fd79a8; color: #fff; }
+        .tier-none { background-color: #ddd; color: #666; }
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        .result-card {
+            transition: transform 0.3s ease;
+            border-left: 4px solid #ddd;
+            margin-bottom: 1rem;
+        }
+        .result-card:hover {
+            transform: translateY(-2px);
+        }
+        .winner-card {
+            border-left-color: #28a745;
+            background-color: #f8fff9;
+        }
+        .no-results {
+            background-color: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 3rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    {% if messages %}
+        <div class="container mb-3">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="container main-container">
+        <div class="header-section">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h1 class="mb-2"><i class="fas fa-search"></i> Number Check Results</h1>
+                    <h3 class="mb-3">Your {{ game_type|title }} Numbers</h3>
+                    <div class="mb-3">
+                        {% for number in main_numbers %}
+                            <span class="lottery-number">{{ number }}</span>
+                        {% endfor %}
+                        <span class="lottery-number {% if game_type == 'mega_millions' %}mega-ball{% else %}power-ball{% endif %}">
+                            {{ mega_ball }}
+                        </span>
+                    </div>
+                    <span class="badge fs-6 {% if game_type == 'mega_millions' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                        {{ game_type|title }}
+                    </span>
+                </div>
+                <div class="text-end">
+                    <a href="{% url 'index' %}#check-tab" class="btn btn-light">
+                        <i class="fas fa-arrow-left"></i> Check Another Set
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-4">
+            <!-- Summary Statistics -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <h3>{{ total_matches }}</h3>
+                        <p class="mb-0">Total Matches</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <h3>{{ total_draws }}</h3>
+                        <p class="mb-0">Draws Checked</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <h3>{% if total_draws > 0 %}{{ total_matches|floatformat:0 }}/{{ total_draws }}{% else %}0{% endif %}</h3>
+                        <p class="mb-0">Match Ratio</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <h3>{% if total_draws > 0 %}{% widthratio total_matches total_draws 100 %}%{% else %}0%{% endif %}</h3>
+                        <p class="mb-0">Match Rate</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-history"></i> Historical Match Results</h5>
+                </div>
+                <div class="card-body">
+                    {% if results %}
+                        <div class="row">
+                            {% for result in results %}
+                                {% if result.matches_main > 0 or result.matches_mega %}
+                                    <div class="col-lg-6 mb-3">
+                                        <div class="card result-card {% if result.matches_main >= 3 or result.matches_mega %}winner-card{% endif %}">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                                    <h6 class="card-title mb-0">
+                                                        {{ result.draw.draw_date|date:"M d, Y" }}
+                                                    </h6>
+                                                    <span class="prize-tier tier-{{ result.prize_tier|lower|cut:' ' }}">
+                                                        {{ result.prize_tier }}
+                                                    </span>
+                                                </div>
+                                                
+                                                <!-- Winning Numbers Display -->
+                                                <div class="mb-2">
+                                                    <small class="text-muted">Winning Numbers:</small><br>
+                                                    {% for number in result.draw.get_main_numbers %}
+                                                        <span class="lottery-number {% if number in main_numbers %}matched-number{% endif %}">
+                                                            {{ number }}
+                                                        </span>
+                                                    {% endfor %}
+                                                    <span class="lottery-number {% if result.draw.mega_ball == mega_ball %}matched-number{% endif %} {% if game_type == 'mega_millions' %}mega-ball{% else %}power-ball{% endif %}">
+                                                        {{ result.draw.mega_ball }}
+                                                    </span>
+                                                </div>
+
+                                                <!-- Match Summary -->
+                                                <div class="text-muted small">
+                                                    <i class="fas fa-check-circle text-success"></i>
+                                                    {{ result.matches_main }} main number(s) matched
+                                                    {% if result.matches_mega %}+ special ball matched{% endif %}
+                                                    {% if result.estimated_winnings != '$0' %}
+                                                        <br><strong class="text-success">Prize: {{ result.estimated_winnings }}</strong>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+
+                        <!-- Show summary of non-winning results -->
+                        {% with non_winning_count=results|length|add:total_matches|mul:-1|add:results|length %}
+                            {% if non_winning_count > 0 %}
+                                <div class="alert alert-secondary text-center mt-3">
+                                    <i class="fas fa-info-circle"></i>
+                                    {{ non_winning_count }} additional draw(s) checked with no significant matches
+                                </div>
+                            {% endif %}
+                        {% endwith %}
+
+                        <!-- Analysis Section -->
+                        <div class="mt-4">
+                            <h6><i class="fas fa-chart-bar"></i> Analysis Summary</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item d-flex justify-content-between">
+                                            <span>Total Drawings Analyzed:</span>
+                                            <strong>{{ total_draws }}</strong>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between">
+                                            <span>Drawings with Any Match:</span>
+                                            <strong>{{ total_matches }}</strong>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between">
+                                            <span>Best Match Found:</span>
+                                            <strong>
+                                                {% if results %}
+                                                    {% for result in results %}
+                                                        {% if forloop.first %}{{ result.prize_tier }}{% endif %}
+                                                    {% endfor %}
+                                                {% else %}
+                                                    No matches
+                                                {% endif %}
+                                            </strong>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="alert alert-info">
+                                        <h6><i class="fas fa-lightbulb"></i> Insights:</h6>
+                                        {% if total_matches > 0 %}
+                                            <p class="mb-1">Your numbers have matched in {{ total_matches }} out of {{ total_draws }} drawings.</p>
+                                            <p class="mb-0">That's a {{ total_matches|floatformat:0 }}/{{ total_draws }} hit rate!</p>
+                                        {% else %}
+                                            <p class="mb-0">These numbers haven't matched significantly in historical draws, but remember - every drawing is independent!</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    {% else %}
+                        <!-- No Results -->
+                        <div class="no-results">
+                            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No Historical Matches Found</h5>
+                            <p class="text-muted mb-3">Your numbers haven't matched significantly in any historical draws we have on record.</p>
+                            <div class="alert alert-info d-inline-block">
+                                <i class="fas fa-info-circle"></i>
+                                This doesn't mean your numbers won't win - every lottery drawing is completely independent!
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="row mt-4">
+                <div class="col-md-12 text-center">
+                    <a href="{% url 'index' %}#check-tab" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Check Different Numbers
+                    </a>
+                    <a href="{% url 'index' %}#save-tab" class="btn btn-success">
+                        <i class="fas fa-save"></i> Save These Numbers
+                    </a>
+                    <a href="{% url 'saved_combinations' %}" class="btn btn-info">
+                        <i class="fas fa-bookmark"></i> View Saved Numbers
+                    </a>
+                    <a href="{% url 'index' %}" class="btn btn-secondary">
+                        <i class="fas fa-home"></i> Back to Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Auto-hide alerts after 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(function(alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    if (bsAlert) {
+                        bsAlert.close();
+                    }
+                });
+            }, 5000);
+        });
+
+        // Add tooltips for prize tiers
+        document.addEventListener('DOMContentLoaded', function() {
+            const prizeTiers = document.querySelectorAll('.prize-tier');
+            prizeTiers.forEach(function(tier) {
+                tier.setAttribute('title', 'Prize tier based on number of matches');
+                new bootstrap.Tooltip(tier);
+            });
+        });
+    </script>
+</body>
+</html>

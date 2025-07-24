@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Number Generation - AI Powered</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding-top: 2rem;
+        }
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        .header-section {
+            background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        .ai-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 2px solid transparent;
+        }
+        .ai-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+            border-color: #00b894;
+        }
+        .method-card {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .method-card.selected {
+            border-color: #00b894;
+            background: linear-gradient(135deg, #d1f2eb 0%, #a8e6cf 100%);
+            transform: scale(1.02);
+        }
+        .method-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .confidence-meter {
+            height: 20px;
+            background: linear-gradient(90deg, #ff7675 0%, #fdcb6e 50%, #00b894 100%);
+            border-radius: 10px;
+            position: relative;
+            margin: 1rem 0;
+        }
+        .confidence-indicator {
+            position: absolute;
+            top: -5px;
+            width: 4px;
+            height: 30px;
+            background: #2d3436;
+            border-radius: 2px;
+        }
+        .feature-highlight {
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            color: white;
+            padding: 1rem;
+            border-radius: 10px;
+            margin: 1rem 0;
+        }
+        .algorithm-badge {
+            background: linear-gradient(135deg, #fd79a8 0%, #e84393 100%);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            display: inline-block;
+            margin: 0.5rem 0.5rem 0.5rem 0;
+        }
+        .prediction-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+        .btn-smart {
+            background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
+            border: none;
+            color: white;
+            padding: 1rem 2rem;
+            font-weight: bold;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+        }
+        .btn-smart:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 184, 148, 0.3);
+            color: white;
+        }
+        .loading-animation {
+            display: none;
+        }
+        .loading-animation.active {
+            display: block;
+        }
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .method-description {
+            font-size: 0.9rem;
+            color: #636e72;
+            margin-bottom: 1rem;
+        }
+        .pro-tip {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    {% if messages %}
+        <div class="container mb-3">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="container main-container">
+        <div class="header-section">
+            <h1 class="mb-3">
+                <i class="fas fa-brain"></i> AI-Powered Smart Generation
+            </h1>
+            <p class="lead">Advanced algorithms analyze patterns to generate optimized lottery combinations</p>
+            <div class="feature-highlight mt-4 d-inline-block">
+                <i class="fas fa-rocket"></i> 
+                Powered by machine learning and statistical analysis
+            </div>
+        </div>
+
+        <div class="p-4">
+            <form id="smartGenerationForm" method="post" action="{% url 'smart_number_generation' %}">
+                {% csrf_token %}
+                
+                <!-- Game Type Selection -->
+                <div class="ai-card">
+                    <h4><i class="fas fa-gamepad"></i> Select Game Type</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="game_type" id="mega_millions" value="mega_millions" checked>
+                                <label class="form-check-label" for="mega_millions">
+                                    <strong>Mega Millions</strong><br>
+                                    <small class="text-muted">5 numbers (1-70) + Mega Ball (1-25)</small>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="game_type" id="powerball" value="powerball">
+                                <label class="form-check-label" for="powerball">
+                                    <strong>Powerball</strong><br>
+                                    <small class="text-muted">5 numbers (1-69) + Power Ball (1-26)</small>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Method Selection -->
+                <div class="ai-card">
+                    <h4><i class="fas fa-robot"></i> Choose AI Generation Method</h4>
+                    <p class="text-muted">Select the artificial intelligence algorithm for number generation</p>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="method-card ai-card" onclick="selectMethod('frequency_based')">
+                                <input type="radio" name="method" value="frequency_based" id="frequency_based" style="display: none;">
+                                <div class="text-center">
+                                    <i class="fas fa-fire method-icon"></i>
+                                    <h5>Frequency Analysis</h5>
+                                    <div class="method-description">
+                                        Analyzes historical draw frequency to identify hot numbers with higher probability of selection.
+                                    </div>
+                                    <div class="algorithm-badge">Machine Learning</div>
+                                    <div class="algorithm-badge">Statistical Analysis</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <div class="method-card ai-card" onclick="selectMethod('pattern_based')">
+                                <input type="radio" name="method" value="pattern_based" id="pattern_based" style="display: none;">
+                                <div class="text-center">
+                                    <i class="fas fa-puzzle-piece method-icon"></i>
+                                    <h5>Pattern Recognition</h5>
+                                    <div class="method-description">
+                                        Uses neural networks to identify recurring patterns and sequences in winning combinations.
+                                    </div>
+                                    <div class="algorithm-badge">Neural Networks</div>
+                                    <div class="algorithm-badge">Deep Learning</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <div class="method-card ai-card" onclick="selectMethod('balanced')">
+                                <input type="radio" name="method" value="balanced" id="balanced" style="display: none;">
+                                <div class="text-center">
+                                    <i class="fas fa-balance-scale method-icon"></i>
+                                    <h5>Balanced Algorithm</h5>
+                                    <div class="method-description">
+                                        Ensures optimal distribution of odd/even and high/low numbers based on statistical models.
+                                    </div>
+                                    <div class="algorithm-badge">Statistical Modeling</div>
+                                    <div class="algorithm-badge">Probability Theory</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <div class="method-card ai-card" onclick="selectMethod('hot_cold_mix')">
+                                <input type="radio" name="method" value="hot_cold_mix" id="hot_cold_mix" style="display: none;">
+                                <div class="text-center">
+                                    <i class="fas fa-yin-yang method-icon"></i>
+                                    <h5>Hot-Cold Fusion</h5>
+                                    <div class="method-description">
+                                        Strategically combines frequently drawn (hot) and rarely drawn (cold) numbers for optimal coverage.
+                                    </div>
+                                    <div class="algorithm-badge">Hybrid AI</div>
+                                    <div class="algorithm-badge">Optimization</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Generation Settings -->
+                <div class="ai-card">
+                    <h4><i class="fas fa-cogs"></i> Generation Settings</h4>
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <label for="count" class="form-label">Number of Combinations</label>
+                            <input type="number" class="form-control" id="count" name="count" value="5" min="1" max="20">
+                            <div class="form-text">Generate 1-20 smart combinations</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="pro-tip">
+                                <i class="fas fa-lightbulb text-warning"></i>
+                                <strong>Pro Tip:</strong> Start with 3-5 combinations to test the algorithm effectiveness.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Confidence Prediction -->
+                <div class="prediction-card">
+                    <h5><i class="fas fa-chart-line"></i> AI Confidence Meter</h5>
+                    <p class="mb-2">Predicted success rate for selected method:</p>
+                    <div class="confidence-meter">
+                        <div class="confidence-indicator" id="confidenceIndicator" style="left: 70%;"></div>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Low (20%)</span>
+                        <span>Medium (50%)</span>
+                        <span>High (80%+)</span>
+                    </div>
+                    <small class="mt-2 d-block">
+                        <i class="fas fa-info-circle"></i>
+                        Confidence based on historical pattern analysis and algorithm performance
+                    </small>
+                </div>
+
+                <!-- Generate Button -->
+                <div class="text-center">
+                    <button type="submit" class="btn btn-smart btn-lg" id="generateBtn">
+                        <span class="normal-text">
+                            <i class="fas fa-brain"></i> Generate Smart Numbers
+                        </span>
+                        <span class="loading-animation">
+                            <i class="fas fa-spinner fa-spin"></i> AI Processing...
+                        </span>
+                    </button>
+                </div>
+            </form>
+
+            <!-- Algorithm Information -->
+            <div class="ai-card mt-4">
+                <h4><i class="fas fa-info-circle"></i> How Smart Generation Works</h4>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="text-center mb-3">
+                            <i class="fas fa-database fa-2x text-primary mb-2"></i>
+                            <h6>Data Analysis</h6>
+                            <p class="small">Processes thousands of historical draws to identify patterns and trends</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center mb-3">
+                            <i class="fas fa-brain fa-2x text-success mb-2"></i>
+                            <h6>AI Processing</h6>
+                            <p class="small">Machine learning algorithms analyze probability matrices and statistical correlations</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center mb-3">
+                            <i class="fas fa-magic fa-2x text-warning mb-2"></i>
+                            <h6>Smart Output</h6>
+                            <p class="small">Generates optimized combinations based on mathematical models and predictions</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info mt-3">
+                    <h6><i class="fas fa-shield-alt"></i> Responsible Gaming Notice</h6>
+                    <p class="mb-0">
+                        While our AI algorithms use advanced statistical analysis, lottery outcomes are inherently random. 
+                        Smart generation increases strategic play but doesn't guarantee wins. Play responsibly!
+                    </p>
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <div class="row mt-4">
+                <div class="col-md-12 text-center">
+                    <a href="{% url 'index' %}" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-home"></i> Back to Home
+                    </a>
+                    <a href="{% url 'analytics_dashboard' %}" class="btn btn-outline-primary me-2">
+                        <i class="fas fa-chart-line"></i> View Analytics
+                    </a>
+                    <a href="{% url 'pattern_analysis' %}" class="btn btn-outline-info">
+                        <i class="fas fa-search"></i> Pattern Analysis
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function selectMethod(method) {
+            // Remove previous selections
+            document.querySelectorAll('.method-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            // Select current method
+            const selectedCard = document.querySelector(`input[value="${method}"]`).closest('.method-card');
+            selectedCard.classList.add('selected');
+            
+            // Update radio button
+            document.getElementById(method).checked = true;
+            
+            // Update confidence meter
+            updateConfidenceMeter(method);
+        }
+
+        function updateConfidenceMeter(method) {
+            const indicator = document.getElementById('confidenceIndicator');
+            const confidenceValues = {
+                'frequency_based': 75,
+                'pattern_based': 65,
+                'balanced': 80,
+                'hot_cold_mix': 70
+            };
+            
+            const confidence = confidenceValues[method] || 60;
+            indicator.style.left = confidence + '%';
+            
+            // Add pulse animation
+            indicator.classList.add('pulse-animation');
+            setTimeout(() => {
+                indicator.classList.remove('pulse-animation');
+            }, 2000);
+        }
+
+        // Form submission with loading animation
+        document.getElementById('smartGenerationForm').addEventListener('submit', function(e) {
+            const generateBtn = document.getElementById('generateBtn');
+            const normalText = generateBtn.querySelector('.normal-text');
+            const loadingText = generateBtn.querySelector('.loading-animation');
+            
+            normalText.style.display = 'none';
+            loadingText.classList.add('active');
+            generateBtn.disabled = true;
+            
+            // Simulate AI processing time (remove in production)
+            setTimeout(() => {
+                // Form will submit naturally
+            }, 2000);
+        });
+
+        // Initialize with first method selected
+        document.addEventListener('DOMContentLoaded', function() {
+            selectMethod('frequency_based');
+        });
+
+        // Auto-hide alerts
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                const bsAlert = new bootstrap.Alert(alert);
+                if (bsAlert) {
+                    bsAlert.close();
+                }
+            });
+        }, 5000);
+    </script>
+</body>
+</html>

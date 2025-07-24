@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.validators import MinValueValidator, MaxValueValidator
+import json
 
 class LotteryDraw(models.Model):
     GAME_CHOICES = [
@@ -33,8 +35,9 @@ class GeneratedCombination(models.Model):
     main_numbers = models.CharField(max_length=100)
     mega_ball = models.IntegerField()
     game_type = models.CharField(max_length=20, choices=LotteryDraw.GAME_CHOICES, default='mega_millions')
-    generation_method = models.CharField(max_length=50, default='random')  # 'random', 'seeded', 'manual'
+    generation_method = models.CharField(max_length=50, default='random')  # 'random', 'seeded', 'manual', 'smart'
     seed_number = models.IntegerField(null=True, blank=True)  # First number used as seed
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     
     def __str__(self):
         return f"Generated on {self.generated_date.strftime('%Y-%m-%d')}: {self.main_numbers} MB: {self.mega_ball}"
@@ -48,6 +51,8 @@ class SavedCombination(models.Model):
     game_type = models.CharField(max_length=20, choices=LotteryDraw.GAME_CHOICES, default='mega_millions')
     created_date = models.DateTimeField(auto_now_add=True)
     is_favorite = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)  # For tracking if still playing these numbers
+    notes = models.TextField(blank=True, null=True)  # Personal notes about the combination
     
     def __str__(self):
         return f"{self.combination_name}: {self.main_numbers} MB: {self.mega_ball}"
@@ -75,7 +80,7 @@ class CombinationCheck(models.Model):
 class ExportLog(models.Model):
     """Model to track exported combination lists"""
     export_date = models.DateTimeField(auto_now_add=True)
-    export_type = models.CharField(max_length=20, choices=[('csv', 'CSV'), ('excel', 'Excel')])
+    export_type = models.CharField(max_length=20, choices=[('csv', 'CSV'), ('excel', 'Excel'), ('pdf', 'PDF')])
     file_name = models.CharField(max_length=200)
     game_type = models.CharField(max_length=20, choices=LotteryDraw.GAME_CHOICES)
     combinations_count = models.IntegerField()
@@ -83,3 +88,128 @@ class ExportLog(models.Model):
     
     def __str__(self):
         return f"Export {self.export_type} on {self.export_date.strftime('%Y-%m-%d')}: {self.combinations_count} combinations"
+
+# NEW MODELS FOR ENHANCED FEATURES
+
+class NumberFrequency(models.Model):
+    """Track frequency of numbers in historical draws"""
+    game_type = models.CharField(max_length=20, choices=LotteryDraw.GAME_CHOICES)
+    number = models.IntegerField()
+    is_mega_ball = models.BooleanField(default=False)
+    frequency = models.IntegerField(default=0)
+    last_drawn = models.DateTimeField(null=True, blank=True)
+    days_since_drawn = models.IntegerField(default=0)
+    
+    class Meta:
+        unique_together = ['game_type', 'number', 'is_mega_ball']
+    
+    def __str__(self):
+        ball_type = "Mega Ball" if self.is_mega_ball else "Main"
+        return f"{self.game_type} - {ball_type} {self.number}: {self.frequency} times"
+
+class UserProfile(models.Model):
+    """Extended user profile for lottery preferences"""
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    preferred_game = models.CharField(max_length=20, choices=LotteryDraw.GAME_CHOICES, default='mega_millions')
+    lucky_numbers = models.CharField(max_length=200, blank=True, null=True)  # JSON array of lucky numbers
+    notification_preferences = models.JSONField(default=dict)  # Email, SMS preferences
+    total_combinations_generated = models.IntegerField(default=0)
+    total_combinations_saved = models.IntegerField(default=0)
+    member_since = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.user.username}'s Profile"
+    
+    def get_lucky_numbers(self):
+        """Parse lucky numbers from JSON"""
+        if self.lucky_numbers:
+            try:
+                return json.loads(self.lucky_numbers)
+            except:
+                return []
+        return []
+
+class SmartPrediction(models.Model):
+    """AI-powered number predictions based on patterns"""
+    game_type = models.CharField(max_length=20, choices=LotteryDraw.GAME_CHOICES)
+    prediction_date = models.DateTimeField(auto_now_add=True)
+    predicted_numbers = models.CharField(max_length=100)  # Main numbers
+    predicted_mega_ball = models.IntegerField()
+    confidence_score = models.FloatField(validators=[MinValueValidator(0.0), MaxValueValidator(1.0)])
+    algorithm_used = models.CharField(max_length=50, default='frequency_analysis')
+    is_active = models.BooleanField(default=True)
+    
+    def __str__(self):
+        return f"Prediction for {self.game_type} on {self.prediction_date.strftime('%Y-%m-%d')}"
+
+class NumberPattern(models.Model):
+    """Track patterns in lottery draws"""
+    game_type = models.CharField(max_length=20, choices=LotteryDraw.GAME_CHOICES)
+    pattern_type = models.CharField(max_length=50)  # 'consecutive', 'odd_even', 'high_low', etc.
+    pattern_description = models.CharField(max_length=200)
+    frequency = models.IntegerField(default=0)
+    last_occurrence = models.DateTimeField(null=True, blank=True)
+    
+    def __str__(self):
+        return f"{self.game_type} - {self.pattern_type}: {self.frequency} occurrences"
+
+class WinningAlert(models.Model):
+    """Store winning notifications for users"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    combination = models.ForeignKey(SavedCombination, on_delete=models.CASCADE)
+    draw = models.ForeignKey(LotteryDraw, on_delete=models.CASCADE)
+    prize_tier = models.CharField(max_length=50)
+    estimated_winnings = models.CharField(max_length=100)
+    alert_date = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+    notification_sent = models.BooleanField(default=False)
+    
+    def __str__(self):
+        return f"Alert for {self.user.username}: {self.prize_tier}"
+
+class NumberStatistics(models.Model):
+    """Overall statistics for number analysis"""
+    game_type = models.CharField(max_length=20, choices=LotteryDraw.GAME_CHOICES)
+    stat_type = models.CharField(max_length=50)  # 'hottest_number', 'coldest_number', 'most_common_pair', etc.
+    stat_value = models.CharField(max_length=200)
+    calculation_date = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.game_type} - {self.stat_type}: {self.stat_value}"
+
+class SyndicatePool(models.Model):
+    """Group play functionality"""
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_pools')
+    members = models.ManyToManyField(User, through='SyndicateMembership')
+    game_type = models.CharField(max_length=20, choices=LotteryDraw.GAME_CHOICES)
+    is_active = models.BooleanField(default=True)
+    created_date = models.DateTimeField(auto_now_add=True)
+    max_members = models.IntegerField(default=10)
+    
+    def __str__(self):
+        return f"Pool: {self.name} ({self.members.count()} members)"
+
+class SyndicateMembership(models.Model):
+    """Membership in lottery pools"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    pool = models.ForeignKey(SyndicatePool, on_delete=models.CASCADE)
+    joined_date = models.DateTimeField(auto_now_add=True)
+    contribution_share = models.FloatField(default=1.0)  # Equal shares by default
+    is_active = models.BooleanField(default=True)
+    
+    class Meta:
+        unique_together = ['user', 'pool']
+
+class PoolCombination(models.Model):
+    """Combinations played by syndicate pools"""
+    pool = models.ForeignKey(SyndicatePool, on_delete=models.CASCADE)
+    main_numbers = models.CharField(max_length=100)
+    mega_ball = models.IntegerField()
+    added_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    added_date = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
+    
+    def __str__(self):
+        return f"{self.pool.name}: {self.main_numbers} MB: {self.mega_ball}"

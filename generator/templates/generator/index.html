@@ -6,6 +6,7 @@
     <title>Enhanced Lottery Number Generator</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/brands.min.css" rel="stylesheet">
     <style>
         body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -77,6 +78,17 @@
             background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
             border: none;
         }
+        .btn-warning {
+            background: linear-gradient(135deg, #fdcb6e 0%, #e17055 100%);
+            border: none;
+        }
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .alert-dismissible .btn-close {
+            padding: 0.75rem 1.25rem;
+        }
     </style>
 </head>
 <body>
@@ -85,7 +97,7 @@
             {% for message in messages %}
                 <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
                     {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             {% endfor %}
         </div>
@@ -94,7 +106,7 @@
     <div class="container main-container">
         <div class="header-section">
             <h1 class="mb-3"><i class="fas fa-dice"></i> Enhanced Lottery Number Generator</h1>
-            <p class="lead">Generate, save, and check lottery combinations with advanced features</p>
+            <p class="lead">Generate, save, check, and compare lottery combinations with advanced features</p>
             
             <!-- Statistics -->
             <div class="row mt-4">
@@ -134,13 +146,18 @@
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="import-tab" data-bs-toggle="tab" data-bs-target="#import" type="button" role="tab">
-                        <i class="fas fa-upload"></i> Import Data
+                    <button class="nav-link" id="check-tab" data-bs-toggle="tab" data-bs-target="#check" type="button" role="tab">
+                        <i class="fas fa-search"></i> Check Numbers
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="save-tab" data-bs-toggle="tab" data-bs-target="#save" type="button" role="tab">
                         <i class="fas fa-save"></i> Save Numbers
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="import-tab" data-bs-toggle="tab" data-bs-target="#import" type="button" role="tab">
+                        <i class="fas fa-upload"></i> Import Data
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
@@ -163,14 +180,14 @@
                                     <form action="{% url 'generate_numbers' %}" method="get">
                                         <div class="mb-3">
                                             <label for="game_type" class="form-label">Game Type</label>
-                                            <select class="form-select" id="game_type" name="game_type">
+                                            <select class="form-select" id="game_type" name="game_type" required>
                                                 <option value="mega_millions">Mega Millions</option>
                                                 <option value="powerball">Powerball</option>
                                             </select>
                                         </div>
                                         <div class="mb-3">
                                             <label for="count" class="form-label">Number of Sets</label>
-                                            <input type="number" class="form-control" id="count" name="count" value="10" min="1" max="100">
+                                            <input type="number" class="form-control" id="count" name="count" value="10" min="1" max="50" required>
                                         </div>
                                         <button type="submit" class="btn btn-primary w-100">
                                             <i class="fas fa-dice"></i> Generate Random Numbers
@@ -189,19 +206,19 @@
                                     <form action="{% url 'generate_numbers' %}" method="get">
                                         <div class="mb-3">
                                             <label for="game_type_seeded" class="form-label">Game Type</label>
-                                            <select class="form-select" id="game_type_seeded" name="game_type">
+                                            <select class="form-select" id="game_type_seeded" name="game_type" required>
                                                 <option value="mega_millions">Mega Millions</option>
                                                 <option value="powerball">Powerball</option>
                                             </select>
                                         </div>
                                         <div class="mb-3">
                                             <label for="seed_number" class="form-label">First Number (Seed)</label>
-                                            <input type="number" class="form-control" id="seed_number" name="seed_number" min="1" max="70" placeholder="Enter first number">
+                                            <input type="number" class="form-control" id="seed_number" name="seed_number" min="1" max="70" placeholder="Enter first number" required>
                                             <div class="form-text">Combinations will include this number</div>
                                         </div>
                                         <div class="mb-3">
                                             <label for="count_seeded" class="form-label">Number of Sets</label>
-                                            <input type="number" class="form-control" id="count_seeded" name="count" value="10" min="1" max="100">
+                                            <input type="number" class="form-control" id="count_seeded" name="count" value="10" min="1" max="50" required>
                                         </div>
                                         <button type="submit" class="btn btn-success w-100">
                                             <i class="fas fa-seedling"></i> Generate Seeded Numbers
@@ -209,6 +226,171 @@
                                     </form>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Bulk Generation -->
+                    <div class="card feature-card">
+                        <div class="card-header bg-info text-white">
+                            <i class="fas fa-layer-group"></i> Bulk Generation with Multiple Seeds
+                        </div>
+                        <div class="card-body">
+                            <form action="{% url 'bulk_generate_numbers' %}" method="post">
+                                {% csrf_token %}
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="game_type_bulk" class="form-label">Game Type</label>
+                                            <select class="form-select" id="game_type_bulk" name="game_type" required>
+                                                <option value="mega_millions">Mega Millions</option>
+                                                <option value="powerball">Powerball</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="first_numbers" class="form-label">First Numbers (comma-separated)</label>
+                                            <input type="text" class="form-control" id="first_numbers" name="first_numbers" 
+                                                   placeholder="e.g., 7, 14, 21, 35" required>
+                                            <div class="form-text">Enter multiple first numbers separated by commas</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="count_per_seed" class="form-label">Combinations per Seed</label>
+                                            <input type="number" class="form-control" id="count_per_seed" name="count_per_seed" value="5" min="1" max="10" required>
+                                        </div>
+                                        <div class="alert alert-info">
+                                            <small><i class="fas fa-info-circle"></i> This will generate combinations for each first number you specify</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-info w-100">
+                                    <i class="fas fa-layer-group"></i> Bulk Generate Numbers
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NEW: Check Numbers Tab -->
+                <div class="tab-pane fade" id="check" role="tabpanel">
+                    <div class="card feature-card">
+                        <div class="card-header bg-warning text-dark">
+                            <i class="fas fa-search"></i> Check Your Numbers Against Historical Draws
+                        </div>
+                        <div class="card-body">
+                            <form action="{% url 'check_custom_numbers' %}" method="post">
+                                {% csrf_token %}
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="game_type_check" class="form-label">Game Type</label>
+                                            <select class="form-select" id="game_type_check" name="game_type" required>
+                                                <option value="mega_millions">Mega Millions</option>
+                                                <option value="powerball">Powerball</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="main_numbers_check" class="form-label">Main Numbers</label>
+                                            <input type="text" class="form-control" id="main_numbers_check" name="main_numbers" 
+                                                   placeholder="e.g., 7, 14, 21, 35, 49" required>
+                                            <div class="form-text">Enter 5 numbers separated by commas</div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="mega_ball_check" class="form-label">Mega/Power Ball</label>
+                                            <input type="number" class="form-control" id="mega_ball_check" name="mega_ball" min="1" max="26" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="alert alert-info">
+                                            <h6><i class="fas fa-info-circle"></i> How it works:</h6>
+                                            <ul class="mb-0">
+                                                <li>Enter your numbers to check against all historical draws</li>
+                                                <li>See how many times your numbers have matched</li>
+                                                <li>View potential prize winnings</li>
+                                                <li>Analyze your number patterns</li>
+                                            </ul>
+                                        </div>
+                                        <div class="alert alert-warning">
+                                            <h6><i class="fas fa-exclamation-triangle"></i> Number Ranges:</h6>
+                                            <p><strong>Mega Millions:</strong> Main: 1-70, Mega Ball: 1-25</p>
+                                            <p class="mb-0"><strong>Powerball:</strong> Main: 1-69, Power Ball: 1-26</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-warning w-100">
+                                    <i class="fas fa-search"></i> Check Numbers Against History
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FIXED: Save Numbers Tab -->
+                <div class="tab-pane fade" id="save" role="tabpanel">
+                    <div class="card feature-card">
+                        <div class="card-header bg-success text-white">
+                            <i class="fas fa-save"></i> Save Your Numbers
+                        </div>
+                        <div class="card-body">
+                            <form action="{% url 'save_combination' %}" method="post" novalidate>
+                                {% csrf_token %}
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="combination_name" class="form-label">Combination Name *</label>
+                                            <input type="text" class="form-control" id="combination_name" name="combination_name" 
+                                                   placeholder="e.g., Lucky Numbers, Birthday Special" required maxlength="100">
+                                            <div class="form-text">Give your combination a memorable name</div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="game_type_save" class="form-label">Game Type *</label>
+                                            <select class="form-select" id="game_type_save" name="game_type" required>
+                                                <option value="">Select game type</option>
+                                                <option value="mega_millions">Mega Millions</option>
+                                                <option value="powerball">Powerball</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="main_numbers" class="form-label">Main Numbers *</label>
+                                            <input type="text" class="form-control" id="main_numbers" name="main_numbers" 
+                                                   placeholder="e.g., 7, 14, 21, 35, 49" required>
+                                            <div class="form-text">Enter exactly 5 numbers separated by commas</div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="mega_ball" class="form-label">Mega/Power Ball *</label>
+                                            <input type="number" class="form-control" id="mega_ball" name="mega_ball" min="1" max="26" required>
+                                            <div class="form-text">Single number for the special ball</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="alert alert-info">
+                                            <h6><i class="fas fa-info-circle"></i> Number Ranges:</h6>
+                                            <p><strong>Mega Millions:</strong></p>
+                                            <ul>
+                                                <li>Main Numbers: 1-70 (exactly 5 unique numbers)</li>
+                                                <li>Mega Ball: 1-25</li>
+                                            </ul>
+                                            <p><strong>Powerball:</strong></p>
+                                            <ul class="mb-0">
+                                                <li>Main Numbers: 1-69 (exactly 5 unique numbers)</li>
+                                                <li>Power Ball: 1-26</li>
+                                            </ul>
+                                        </div>
+                                        <div class="alert alert-success">
+                                            <h6><i class="fas fa-lightbulb"></i> Tips:</h6>
+                                            <ul class="mb-0">
+                                                <li>No duplicate numbers in main numbers</li>
+                                                <li>Use descriptive names for easy identification</li>
+                                                <li>Save multiple combinations for comparison</li>
+                                                <li>Check saved combinations regularly</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-success w-100">
+                                    <i class="fas fa-save"></i> Save Combination
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -251,62 +433,6 @@
                                 </div>
                                 <button type="submit" class="btn btn-info">
                                     <i class="fas fa-upload"></i> Import Data
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Save Numbers Tab -->
-                <div class="tab-pane fade" id="save" role="tabpanel">
-                    <div class="card feature-card">
-                        <div class="card-header bg-warning text-dark">
-                            <i class="fas fa-save"></i> Save Your Numbers
-                        </div>
-                        <div class="card-body">
-                            <form action="{% url 'save_combination' %}" method="post">
-                                {% csrf_token %}
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="combination_name" class="form-label">Combination Name</label>
-                                            <input type="text" class="form-control" id="combination_name" name="combination_name" placeholder="e.g., Lucky Numbers" required>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="game_type_save" class="form-label">Game Type</label>
-                                            <select class="form-select" id="game_type_save" name="game_type">
-                                                <option value="mega_millions">Mega Millions</option>
-                                                <option value="powerball">Powerball</option>
-                                            </select>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="main_numbers" class="form-label">Main Numbers</label>
-                                            <input type="text" class="form-control" id="main_numbers" name="main_numbers" placeholder="e.g., 1, 15, 22, 35, 67" required>
-                                            <div class="form-text">Enter 5 numbers separated by commas</div>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="mega_ball" class="form-label">Mega/Power Ball</label>
-                                            <input type="number" class="form-control" id="mega_ball" name="mega_ball" min="1" max="26" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="alert alert-info">
-                                            <h6><i class="fas fa-info-circle"></i> Number Ranges:</h6>
-                                            <p><strong>Mega Millions:</strong></p>
-                                            <ul>
-                                                <li>Main Numbers: 1-70</li>
-                                                <li>Mega Ball: 1-25</li>
-                                            </ul>
-                                            <p><strong>Powerball:</strong></p>
-                                            <ul class="mb-0">
-                                                <li>Main Numbers: 1-69</li>
-                                                <li>Power Ball: 1-26</li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
-                                <button type="submit" class="btn btn-warning">
-                                    <i class="fas fa-save"></i> Save Combination
                                 </button>
                             </form>
                         </div>
@@ -376,7 +502,7 @@
                                 </div>
                                 <div class="col-md-3">
                                     <a href="{% url 'export_combinations' %}?format=csv" class="btn btn-outline-info w-100 mb-2">
-                                        <i class="fas fa-download"></i> Export CSV
+                                        <i class="fas fa-download"></i> Export Latest CSV
                                     </a>
                                 </div>
                                 <div class="col-md-3">
@@ -433,6 +559,68 @@
                     updateNumberRanges(this.value, null, megaBall);
                 });
             }
+
+            // Handle check numbers form
+            const gameTypeCheck = document.getElementById('game_type_check');
+            const megaBallCheck = document.getElementById('mega_ball_check');
+            if (gameTypeCheck && megaBallCheck) {
+                gameTypeCheck.addEventListener('change', function() {
+                    updateNumberRanges(this.value, null, megaBallCheck);
+                });
+            }
+
+            // Form validation for save combination
+            const saveForm = document.querySelector('form[action="{% url 'save_combination' %}"]');
+            if (saveForm) {
+                saveForm.addEventListener('submit', function(e) {
+                    const mainNumbers = document.getElementById('main_numbers').value.trim();
+                    const megaBall = document.getElementById('mega_ball').value.trim();
+                    const combinationName = document.getElementById('combination_name').value.trim();
+                    const gameType = document.getElementById('game_type_save').value;
+
+                    if (!combinationName || !mainNumbers || !megaBall || !gameType) {
+                        e.preventDefault();
+                        alert('Please fill in all required fields');
+                        return;
+                    }
+
+                    // Validate main numbers format
+                    const numbers = mainNumbers.split(',').map(n => n.trim());
+                    if (numbers.length !== 5) {
+                        e.preventDefault();
+                        alert('Please enter exactly 5 main numbers separated by commas');
+                        return;
+                    }
+
+                    // Check for valid numbers
+                    for (let num of numbers) {
+                        if (isNaN(num) || num === '') {
+                            e.preventDefault();
+                            alert('All main numbers must be valid integers');
+                            return;
+                        }
+                    }
+
+                    // Check for duplicates
+                    const uniqueNumbers = new Set(numbers);
+                    if (uniqueNumbers.size !== numbers.length) {
+                        e.preventDefault();
+                        alert('Main numbers must be unique (no duplicates)');
+                        return;
+                    }
+                });
+            }
+
+            // Auto-hide alerts after 5 seconds
+            setTimeout(function() {
+                const alerts = document.querySelectorAll('.alert-dismissible');
+                alerts.forEach(function(alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    if (bsAlert) {
+                        bsAlert.close();
+                    }
+                });
+            }, 5000);
         });
     </script>
 </body>

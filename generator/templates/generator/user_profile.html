@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - Lottery Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding-top: 2rem;
+        }
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        .header-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+        }
+        .profile-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            transition: transform 0.3s ease;
+        }
+        .profile-card:hover {
+            transform: translateY(-2px);
+        }
+        .user-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: white;
+            margin: 0 auto 1rem;
+        }
+        .stat-badge {
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            color: white;
+            padding: 1rem;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        .lucky-number {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
+            color: white;
+            text-align: center;
+            line-height: 40px;
+            margin: 0.25rem;
+            font-weight: bold;
+        }
+        .activity-item {
+            border-left: 4px solid #667eea;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            background: #f8f9fa;
+            border-radius: 0 8px 8px 0;
+        }
+        .alert-item {
+            border-left: 4px solid #00b894;
+            background: linear-gradient(135deg, #d1f2eb 0%, #a8e6cf 30%);
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 0 8px 8px 0;
+        }
+        .achievement-badge {
+            background: linear-gradient(135deg, #fdcb6e 0%, #e17055 100%);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-size: 0.85rem;
+            margin: 0.25rem;
+            display: inline-block;
+        }
+        .preference-card {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+        .preference-card.selected {
+            border-color: #00b894;
+            background: #d1f2eb;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 1rem 0;
+        }
+        .btn-profile {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            border-radius: 25px;
+            padding: 0.75rem 1.5rem;
+        }
+        .btn-profile:hover {
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+        .nav-pills .nav-link.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .lottery-number-small {
+            display: inline-block;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background-color: #667eea;
+            color: white;
+            text-align: center;
+            line-height: 25px;
+            margin-right: 2px;
+            font-weight: bold;
+            font-size: 0.75rem;
+        }
+        .mega-ball {
+            background-color: #dc3545;
+        }
+        .power-ball {
+            background-color: #fd7e14;
+        }
+    </style>
+</head>
+<body>
+    {% if messages %}
+        <div class="container mb-3">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="container main-container">
+        <div class="header-section">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="mb-2"><i class="fas fa-user-circle"></i> My Profile</h1>
+                    <p class="lead mb-0">Manage your lottery preferences and track your activity</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <h4>{{ user.get_full_name|default:user.username }}</h4>
+                    <small>Member since {{ profile.member_since|date:"M Y" }}</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-4">
+            <!-- Statistics Overview -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="stat-badge">
+                        <h3>{{ total_saved }}</h3>
+                        <p class="mb-0">Saved Combinations</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-badge">
+                        <h3>{{ total_generated }}</h3>
+                        <p class="mb-0">Generated Numbers</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-badge">
+                        <h3>{{ recent_alerts|length }}</h3>
+                        <p class="mb-0">Winning Alerts</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-badge">
+                        <h3>{{ lucky_numbers|length }}</h3>
+                        <p class="mb-0">Lucky Numbers</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content Tabs -->
+            <ul class="nav nav-pills mb-4" id="profileTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="settings-tab" data-bs-toggle="pill" data-bs-target="#settings" type="button" role="tab">
+                        <i class="fas fa-cog"></i> Settings
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="activity-tab" data-bs-toggle="pill" data-bs-target="#activity" type="button" role="tab">
+                        <i class="fas fa-history"></i> Activity
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="stats-tab" data-bs-toggle="pill" data-bs-target="#stats" type="button" role="tab">
+                        <i class="fas fa-chart-bar"></i> Statistics
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="alerts-tab" data-bs-toggle="pill" data-bs-target="#alerts" type="button" role="tab">
+                        <i class="fas fa-bell"></i> Alerts
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="profileTabsContent">
+                <!-- Settings Tab -->
+                <div class="tab-pane fade show active" id="settings" role="tabpanel">
+                    <form method="post" action="{% url 'user_profile' %}">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="profile-card">
+                                    <h5><i class="fas fa-gamepad"></i> Game Preferences</h5>
+                                    <div class="mb-3">
+                                        <label for="preferred_game" class="form-label">Preferred Game</label>
+                                        <select class="form-select" id="preferred_game" name="preferred_game">
+                                            <option value="mega_millions" {% if profile.preferred_game == 'mega_millions' %}selected{% endif %}>
+                                                Mega Millions
+                                            </option>
+                                            <option value="powerball" {% if profile.preferred_game == 'powerball' %}selected{% endif %}>
+                                                Powerball
+                                            </option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="lucky_numbers" class="form-label">Lucky Numbers</label>
+                                        <input type="text" class="form-control" id="lucky_numbers" name="lucky_numbers" 
+                                               value="{% for num in lucky_numbers %}{{ num }}{% if not forloop.last %}, {% endif %}{% endfor %}"
+                                               placeholder="e.g., 7, 14, 21, 35, 49">
+                                        <div class="form-text">Enter your personal lucky numbers (comma-separated)</div>
+                                    </div>
+                                    
+                                    {% if lucky_numbers %}
+                                        <div class="mb-3">
+                                            <label class="form-label">Current Lucky Numbers:</label><br>
+                                            {% for number in lucky_numbers %}
+                                                <span class="lucky-number">{{ number }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="profile-card">
+                                    <h5><i class="fas fa-bell"></i> Notification Preferences</h5>
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" id="email_notifications" name="email_notifications" checked>
+                                        <label class="form-check-label" for="email_notifications">
+                                            Email notifications for winning combinations
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" id="weekly_summary" name="weekly_summary" checked>
+                                        <label class="form-check-label" for="weekly_summary">
+                                            Weekly summary of generated numbers
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" id="pattern_alerts" name="pattern_alerts">
+                                        <label class="form-check-label" for="pattern_alerts">
+                                            Alerts for new pattern discoveries
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" id="smart_recommendations" name="smart_recommendations" checked>
+                                        <label class="form-check-label" for="smart_recommendations">
+                                            AI-powered number recommendations
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-profile btn-lg">
+                                <i class="fas fa-save"></i> Save Preferences
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Activity Tab -->
+                <div class="tab-pane fade" id="activity" role="tabpanel">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="profile-card">
+                                <h5><i class="fas fa-save"></i> Recent Saved Combinations</h5>
+                                {% if recent_saved %}
+                                    {% for combo in recent_saved %}
+                                        <div class="activity-item">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <h6 class="mb-1">{{ combo.combination_name }}</h6>
+                                                    <div class="mb-2">
+                                                        {% for number in combo.get_main_numbers_list %}
+                                                            <span class="lottery-number-small">{{ number }}</span>
+                                                        {% endfor %}
+                                                        <span class="lottery-number-small {% if combo.game_type == 'mega_millions' %}mega-ball{% else %}power-ball{% endif %}">
+                                                            {{ combo.mega_ball }}
+                                                        </span>
+                                                    </div>
+                                                    <small class="text-muted">{{ combo.created_date|date:"M d, Y" }}</small>
+                                                </div>
+                                                <span class="badge bg-primary">{{ combo.get_game_type_display }}</span>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="text-center text-muted py-4">
+                                        <i class="fas fa-save fa-2x mb-2"></i>
+                                        <p>No saved combinations yet</p>
+                                        <a href="{% url 'index' %}#save-tab" class="btn btn-outline-primary btn-sm">Save Your First Numbers</a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="profile-card">
+                                <h5><i class="fas fa-dice"></i> Recent Generated Numbers</h5>
+                                {% if recent_generated %}
+                                    {% for combo in recent_generated %}
+                                        <div class="activity-item">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <h6 class="mb-1">{{ combo.generation_method|title }} Generation</h6>
+                                                    <div class="mb-2">
+                                                        {% for number in combo.main_numbers.split:', ' %}
+                                                            <span class="lottery-number-small">{{ number }}</span>
+                                                        {% endfor %}
+                                                        <span class="lottery-number-small {% if combo.game_type == 'mega_millions' %}mega-ball{% else %}power-ball{% endif %}">
+                                                            {{ combo.mega_ball }}
+                                                        </span>
+                                                    </div>
+                                                    <small class="text-muted">{{ combo.generated_date|date:"M d, Y" }}</small>
+                                                </div>
+                                                {% if combo.seed_number %}
+                                                    <span class="badge bg-success">Seed: {{ combo.seed_number }}</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="text-center text-muted py-4">
+                                        <i class="fas fa-dice fa-2x mb-2"></i>
+                                        <p>No generated numbers yet</p>
+                                        <a href="{% url 'index' %}#generate-tab" class="btn btn-outline-success btn-sm">Generate Numbers</a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Statistics Tab -->
+                <div class="tab-pane fade" id="stats" role="tabpanel">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="profile-card">
+                                <h5><i class="fas fa-chart-pie"></i> Generation Methods</h5>
+                                <div class="chart-container">
+                                    <canvas id="methodsChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="profile-card">
+                                <h5><i class="fas fa-calendar"></i> Activity Timeline</h5>
+                                <div class="chart-container">
+                                    <canvas id="activityChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="profile-card">
+                        <h5><i class="fas fa-trophy"></i> Achievements</h5>
+                        <div class="row">
+                            <div class="col-md-3 text-center mb-3">
+                                <i class="fas fa-seedling fa-3x text-success mb-2"></i>
+                                <div class="achievement-badge">First Generation</div>
+                                <p class="small mt-2">Generated your first lottery combination</p>
+                            </div>
+                            <div class="col-md-3 text-center mb-3">
+                                <i class="fas fa-save fa-3x text-primary mb-2"></i>
+                                <div class="achievement-badge">Number Collector</div>
+                                <p class="small mt-2">Saved 5+ combinations</p>
+                            </div>
+                            <div class="col-md-3 text-center mb-3">
+                                <i class="fas fa-brain fa-3x text-info mb-2"></i>
+                                <div class="achievement-badge">Smart Player</div>
+                                <p class="small mt-2">Used AI generation</p>
+                            </div>
+                            <div class="col-md-3 text-center mb-3">
+                                <i class="fas fa-chart-line fa-3x text-warning mb-2"></i>
+                                <div class="achievement-badge">Data Analyst</div>
+                                <p class="small mt-2">Viewed analytics dashboard</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alerts Tab -->
+                <div class="tab-pane fade" id="alerts" role="tabpanel">
+                    <div class="profile-card">
+                        <h5><i class="fas fa-bell"></i> Winning Alerts & Notifications</h5>
+                        {% if recent_alerts %}
+                            {% for alert in recent_alerts %}
+                                <div class="alert-item">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1">
+                                                <i class="fas fa-trophy text-warning"></i>
+                                                {{ alert.prize_tier }} Match!
+                                            </h6>
+                                            <p class="mb-1">
+                                                Your combination "{{ alert.combination.combination_name }}" matched 
+                                                in the {{ alert.draw.draw_date|date:"M d, Y" }} draw.
+                                            </p>
+                                            <div class="mb-2">
+                                                <strong>Estimated Winnings: {{ alert.estimated_winnings }}</strong>
+                                            </div>
+                                            <small class="text-muted">{{ alert.alert_date|date:"M d, Y g:i A" }}</small>
+                                        </div>
+                                        {% if not alert.is_read %}
+                                            <span class="badge bg-danger">New</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center text-muted py-5">
+                                <i class="fas fa-bell-slash fa-3x mb-3"></i>
+                                <h5>No Alerts Yet</h5>
+                                <p>You'll receive notifications here when your saved combinations match winning numbers</p>
+                                <a href="{% url 'saved_combinations' %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-plus"></i> Add Combinations to Track
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="row mt-4">
+                <div class="col-md-12">
+                    <div class="profile-card">
+                        <h5><i class="fas fa-rocket"></i> Quick Actions</h5>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <a href="{% url 'smart_number_generation' %}" class="btn btn-success w-100 mb-2">
+                                    <i class="fas fa-brain"></i> Smart Generation
+                                </a>
+                            </div>
+                            <div class="col-md-3">
+                                <a href="{% url 'analytics_dashboard' %}" class="btn btn-info w-100 mb-2">
+                                    <i class="fas fa-chart-line"></i> View Analytics
+                                </a>
+                            </div>
+                            <div class="col-md-3">
+                                <a href="{% url 'saved_combinations' %}" class="btn btn-primary w-100 mb-2">
+                                    <i class="fas fa-bookmark"></i> My Combinations
+                                </a>
+                            </div>
+                            <div class="col-md-3">
+                                <a href="{% url 'index' %}" class="btn btn-secondary w-100 mb-2">
+                                    <i class="fas fa-home"></i> Back to Home
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Methods Chart
+        const ctx1 = document.getElementById('methodsChart').getContext('2d');
+        new Chart(ctx1, {
+            type: 'doughnut',
+            data: {
+                labels: ['Random', 'Seeded', 'Smart AI', 'Manual'],
+                datasets: [{
+                    data: [40, 30, 20, 10],
+                    backgroundColor: ['#74b9ff', '#00b894', '#fdcb6e', '#fd79a8']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+
+        // Activity Chart
+        const ctx2 = document.getElementById('activityChart').getContext('2d');
+        new Chart(ctx2, {
+            type: 'line',
+            data: {
+                labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                datasets: [{
+                    label: 'Generated',
+                    data: [12, 19, 8, 15],
+                    borderColor: '#74b9ff',
+                    tension: 0.1
+                }, {
+                    label: 'Saved',
+                    data: [5, 8, 3, 7],
+                    borderColor: '#00b894',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+
+        // Auto-hide alerts
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                const bsAlert = new bootstrap.Alert(alert);
+                if (bsAlert) {
+                    bsAlert.close();
+                }
+            });
+        }, 5000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Lucky Numbers</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #fdcb6e 0%, #e17055 100%);
+            min-height: 100vh;
+            padding-top: 2rem;
+        }
+        .main-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        .header-section {
+            background: linear-gradient(135deg, #fdcb6e 0%, #e17055 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        .lottery-number {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #fdcb6e 0%, #e17055 100%);
+            color: white;
+            text-align: center;
+            line-height: 40px;
+            margin-right: 5px;
+            font-weight: bold;
+        }
+        .mega-ball { background: linear-gradient(135deg, #dc3545 0%, #c0392b 100%); }
+        .power-ball { background: linear-gradient(135deg, #fd7e14 0%, #e67e22 100%); }
+        .lucky-card {
+            border-left: 4px solid #fdcb6e;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container main-container">
+        <div class="header-section">
+            <h1 class="mb-3"><i class="fas fa-star"></i> Your Lucky Numbers</h1>
+            <p class="lead">Personalized {{ game_type|title }} combinations based on your special dates</p>
+        </div>
+
+        <div class="p-4">
+            {% if combinations %}
+                <div class="row">
+                    {% for combo in combinations %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card lucky-card">
+                                <div class="card-header">
+                                    <strong>Lucky Set {{ forloop.counter }}</strong>
+                                    <span class="badge bg-warning ms-2"><i class="fas fa-star"></i> Personal</span>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-2">
+                                        {% for number in combo.main_numbers %}
+                                            <span class="lottery-number">{{ number }}</span>
+                                        {% endfor %}
+                                        <span class="lottery-number {% if game_type == 'mega_millions' %}mega-ball{% else %}power-ball{% endif %}">
+                                            {{ combo.mega_ball }}
+                                        </span>
+                                    </div>
+                                    <small class="text-muted">
+                                        <i class="fas fa-heart"></i> Generated from your personal dates
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="row mt-4">
+                <div class="col-md-12 text-center">
+                    <a href="{% url 'lucky_number_generator' %}" class="btn btn-warning">
+                        <i class="fas fa-magic"></i> Generate More Lucky Numbers
+                    </a>
+                    <a href="{% url 'export_combinations' %}?format=csv" class="btn btn-success">
+                        <i class="fas fa-download"></i> Export These Numbers
+                    </a>
+                    <a href="{% url 'index' %}" class="btn btn-secondary">
+                        <i class="fas fa-home"></i> Back to Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

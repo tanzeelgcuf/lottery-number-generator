@@ -1,4 +1,3 @@
-# Copy the entire content from "Bulk Results Template" artifact above
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,6 +11,7 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding-top: 2rem;
+            padding-bottom: 4rem;
         }
         .main-container {
             max-width: 1400px;
@@ -73,6 +73,41 @@
             border-radius: 8px;
             margin-bottom: 1rem;
         }
+        .export-section {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+        }
+        .copy-success {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            display: none;
+            margin-top: 0.5rem;
+        }
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #343a40 0%, #495057 100%);
+            color: white;
+            text-align: center;
+            padding: 1rem;
+            font-size: 0.9rem;
+        }
+        .footer a {
+            color: #ffc107;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .footer a:hover {
+            color: #ffed4e;
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -101,6 +136,29 @@
 
         <div class="p-4">
             {% if combinations_by_seed %}
+                <!-- Export and Copy Section -->
+                <div class="export-section">
+                    <h5><i class="fas fa-download"></i> Export Current Combinations</h5>
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <p class="mb-2">Export or copy all {{ total_combinations }} combinations shown below:</p>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="btn-group w-100" role="group">
+                                <button type="button" class="btn btn-light" onclick="copyAllToClipboard()">
+                                    <i class="fas fa-copy"></i> Copy All
+                                </button>
+                                <button type="button" class="btn btn-warning" onclick="exportAllToCSV()">
+                                    <i class="fas fa-file-csv"></i> CSV Export
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="copySuccess" class="copy-success">
+                        <i class="fas fa-check-circle"></i> All combinations copied to clipboard!
+                    </div>
+                </div>
+
                 {% for seed_number, combinations in combinations_by_seed.items %}
                     <div class="seed-section p-4 rounded">
                         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -109,16 +167,19 @@
                                 <small class="text-muted ms-2">({{ combinations|length }} combinations)</small>
                             </h3>
                             <div>
-                                <button class="btn btn-outline-success btn-sm" onclick="selectAllForSeed({{ seed_number }})">
+                                <button class="btn btn-outline-success btn-sm" onclick="copyGroupToClipboard({{ seed_number }})">
+                                    <i class="fas fa-copy"></i> Copy Group
+                                </button>
+                                <button class="btn btn-outline-warning btn-sm" onclick="selectAllForSeed({{ seed_number }})">
                                     <i class="fas fa-check-square"></i> Select All
                                 </button>
                             </div>
                         </div>
                         
-                        <div class="row">
+                        <div class="row" data-seed-group="{{ seed_number }}">
                             {% for combo in combinations %}
                                 <div class="col-lg-4 col-md-6 mb-3">
-                                    <div class="card combination-card">
+                                    <div class="card combination-card" data-combination="{{ combo.main_numbers|join:',' }},{{ combo.mega_ball }}" data-seed="{{ seed_number }}">
                                         <div class="card-header d-flex justify-content-between align-items-center">
                                             <span><strong>Set {{ forloop.counter }}</strong></span>
                                             <input type="checkbox" class="form-check-input combination-checkbox" 
@@ -135,7 +196,7 @@
                                                 </span>
                                             </div>
                                             <small class="text-muted mt-2 d-block">
-                                                <i class="fas fa-seedling"></i> Started with {{ seed_number }}
+                                                <i class="fas fa-seedling"></i> {{ combo.main_numbers|join:'-' }}-{{ combo.mega_ball }}
                                             </small>
                                         </div>
                                     </div>
@@ -152,19 +213,24 @@
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <button id="selectAllBtn" class="btn btn-primary w-100 mb-2" onclick="selectAll()">
-                                    <i class="fas fa-check-square"></i> Select All Combinations
+                                    <i class="fas fa-check-square"></i> Select All
                                 </button>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <button id="exportSelectedBtn" class="btn btn-success w-100 mb-2" onclick="exportSelected()">
                                     <i class="fas fa-download"></i> Export Selected
                                 </button>
                             </div>
-                            <div class="col-md-4">
-                                <button id="saveSelectedBtn" class="btn btn-warning w-100 mb-2" onclick="saveSelected()">
-                                    <i class="fas fa-save"></i> Save Selected
+                            <div class="col-md-3">
+                                <button id="copySelectedBtn" class="btn btn-warning w-100 mb-2" onclick="copySelectedToClipboard()">
+                                    <i class="fas fa-copy"></i> Copy Selected
+                                </button>
+                            </div>
+                            <div class="col-md-3">
+                                <button id="clearSelectionBtn" class="btn btn-outline-secondary w-100 mb-2" onclick="clearSelection()">
+                                    <i class="fas fa-times"></i> Clear Selection
                                 </button>
                             </div>
                         </div>
@@ -194,23 +260,161 @@
                     <a href="{% url 'saved_combinations' %}" class="btn btn-info">
                         <i class="fas fa-bookmark"></i> View Saved Numbers
                     </a>
-                    <a href="{% url 'export_combinations_enhanced' %}?format=csv&game_type={{ game_type }}" class="btn btn-warning">
-                        <i class="fas fa-download"></i> Export All to CSV
+                    <a href="{% url 'texas_lottery_integration' %}" class="btn btn-warning">
+                        <i class="fas fa-external-link-alt"></i> Texas Lottery
                     </a>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Footer -->
+    <div class="footer">
+        <p class="mb-0">
+            Developed by <a href="https://www.technlogics.co" target="_blank">Technlogics</a> | 
+            Advanced Lottery Number Generator &copy; 2025
+        </p>
+    </div>
+
+    <!-- Hidden form for CSV export -->
+    <form id="exportForm" action="{% url 'export_current_combinations' %}" method="post" style="display: none;">
+        {% csrf_token %}
+        <input type="hidden" name="combinations_data" id="combinationsData">
+        <input type="hidden" name="game_type" value="{{ game_type }}">
+        <input type="hidden" name="format" value="csv">
+    </form>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         let selectedCombinations = new Set();
 
+        // Get all combinations data
+        function getAllCombinationsData() {
+            const cards = document.querySelectorAll('.combination-card');
+            const combinations = [];
+            
+            cards.forEach((card, index) => {
+                const combinationAttr = card.getAttribute('data-combination');
+                const seedAttr = card.getAttribute('data-seed');
+                if (combinationAttr) {
+                    const numbers = combinationAttr.split(',');
+                    const mainNumbers = numbers.slice(0, 5).map(n => parseInt(n));
+                    const megaBall = parseInt(numbers[5]);
+                    
+                    combinations.push({
+                        set_number: index + 1,
+                        main_numbers: mainNumbers,
+                        mega_ball: megaBall,
+                        seed: parseInt(seedAttr)
+                    });
+                }
+            });
+            
+            return combinations;
+        }
+
+        // Copy all combinations to clipboard
+        function copyAllToClipboard() {
+            const combinations = getAllCombinationsData();
+            const gameType = '{{ game_type|title }}';
+            const firstNumbers = '{{ first_numbers|join:", " }}';
+            
+            let copyText = `${gameType} Lottery Combinations (Bulk Generated)\n`;
+            copyText += `First Numbers Used: ${firstNumbers}\n`;
+            copyText += `Generated: ${new Date().toLocaleDateString()}\n`;
+            copyText += `Total Sets: ${combinations.length}\n\n`;
+            
+            let currentSeed = null;
+            combinations.forEach(combo => {
+                if (combo.seed !== currentSeed) {
+                    currentSeed = combo.seed;
+                    copyText += `\n--- First Number: ${currentSeed} ---\n`;
+                }
+                const mainNumbers = combo.main_numbers.join('-');
+                const completeCombination = `${mainNumbers}-${combo.mega_ball}`;
+                copyText += `${completeCombination}\n`;
+            });
+            
+            copyText += `\n--- Developed by Technlogics (www.technlogics.co) ---`;
+            
+            // Copy to clipboard
+            navigator.clipboard.writeText(copyText).then(function() {
+                showCopySuccess();
+            }).catch(function(err) {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = copyText;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showCopySuccess();
+            });
+        }
+
+        // Copy group to clipboard
+        function copyGroupToClipboard(seedNumber) {
+            const groupCards = document.querySelectorAll(`[data-seed-group="${seedNumber}"] .combination-card`);
+            const gameType = '{{ game_type|title }}';
+            
+            let copyText = `${gameType} Combinations - First Number: ${seedNumber}\n`;
+            copyText += `Generated: ${new Date().toLocaleDateString()}\n\n`;
+            
+            groupCards.forEach((card, index) => {
+                const combinationAttr = card.getAttribute('data-combination');
+                if (combinationAttr) {
+                    const numbers = combinationAttr.split(',');
+                    const mainNumbers = numbers.slice(0, 5).join('-');
+                    const megaBall = numbers[5];
+                    copyText += `Set ${index + 1}: ${mainNumbers}-${megaBall}\n`;
+                }
+            });
+            
+            copyText += `\n--- Developed by Technlogics (www.technlogics.co) ---`;
+            
+            navigator.clipboard.writeText(copyText).then(function() {
+                showCopySuccess();
+            }).catch(function(err) {
+                // Fallback
+                const textArea = document.createElement('textarea');
+                textArea.value = copyText;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showCopySuccess();
+            });
+        }
+
+        // Export all to CSV
+        function exportAllToCSV() {
+            const combinations = getAllCombinationsData();
+            
+            if (combinations.length === 0) {
+                alert('No combinations to export');
+                return;
+            }
+            
+            document.getElementById('combinationsData').value = JSON.stringify(combinations);
+            document.getElementById('exportForm').submit();
+        }
+
+        // Show copy success message
+        function showCopySuccess() {
+            const successDiv = document.getElementById('copySuccess');
+            successDiv.style.display = 'block';
+            setTimeout(() => {
+                successDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        // Update selected count
         function updateSelectedCount() {
             const count = selectedCombinations.size;
             document.getElementById('selectedCount').textContent = `${count} combinations selected`;
         }
 
+        // Select all for specific seed
         function selectAllForSeed(seedNumber) {
             const checkboxes = document.querySelectorAll(`input[data-seed="${seedNumber}"]`);
             checkboxes.forEach(checkbox => {
@@ -220,19 +424,18 @@
             updateSelectedCount();
         }
 
+        // Select all combinations
         function selectAll() {
             const checkboxes = document.querySelectorAll('.combination-checkbox');
             const allSelected = selectedCombinations.size === checkboxes.length;
             
             if (allSelected) {
-                // Deselect all
                 checkboxes.forEach(checkbox => {
                     checkbox.checked = false;
                 });
                 selectedCombinations.clear();
-                document.getElementById('selectAllBtn').innerHTML = '<i class="fas fa-check-square"></i> Select All Combinations';
+                document.getElementById('selectAllBtn').innerHTML = '<i class="fas fa-check-square"></i> Select All';
             } else {
-                // Select all
                 checkboxes.forEach(checkbox => {
                     checkbox.checked = true;
                     selectedCombinations.add(checkbox.dataset.combination);
@@ -242,39 +445,74 @@
             updateSelectedCount();
         }
 
+        // Clear selection
+        function clearSelection() {
+            const checkboxes = document.querySelectorAll('.combination-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            selectedCombinations.clear();
+            document.getElementById('selectAllBtn').innerHTML = '<i class="fas fa-check-square"></i> Select All';
+            updateSelectedCount();
+        }
+
+        // Copy selected to clipboard
+        function copySelectedToClipboard() {
+            if (selectedCombinations.size === 0) {
+                alert('Please select at least one combination to copy');
+                return;
+            }
+            
+            const gameType = '{{ game_type|title }}';
+            let copyText = `${gameType} Selected Combinations\n`;
+            copyText += `Generated: ${new Date().toLocaleDateString()}\n`;
+            copyText += `Selected: ${selectedCombinations.size} combinations\n\n`;
+            
+            Array.from(selectedCombinations).forEach((combination, index) => {
+                const numbers = combination.split(',');
+                const mainNumbers = numbers.slice(0, 5).join('-');
+                const megaBall = numbers[5];
+                copyText += `Set ${index + 1}: ${mainNumbers}-${megaBall}\n`;
+            });
+            
+            copyText += `\n--- Developed by Technlogics (www.technlogics.co) ---`;
+            
+            navigator.clipboard.writeText(copyText).then(function() {
+                showCopySuccess();
+            }).catch(function(err) {
+                // Fallback
+                const textArea = document.createElement('textarea');
+                textArea.value = copyText;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showCopySuccess();
+            });
+        }
+
+        // Export selected combinations
         function exportSelected() {
             if (selectedCombinations.size === 0) {
                 alert('Please select at least one combination to export');
                 return;
             }
             
-            // Create CSV content
-            let csvContent = "First Number,Main Numbers,Mega/Power Ball,Complete Combination\n";
-            selectedCombinations.forEach(combination => {
+            // Convert selected combinations to the format expected by the export function
+            const selectedData = Array.from(selectedCombinations).map((combination, index) => {
                 const numbers = combination.split(',');
-                const mainNumbers = numbers.slice(0, 5).join('-');
-                const megaBall = numbers[5];
-                const firstNumber = numbers[0];
-                csvContent += `${firstNumber},"${mainNumbers}",${megaBall},"${combination}"\n`;
+                const mainNumbers = numbers.slice(0, 5).map(n => parseInt(n));
+                const megaBall = parseInt(numbers[5]);
+                
+                return {
+                    set_number: index + 1,
+                    main_numbers: mainNumbers,
+                    mega_ball: megaBall
+                };
             });
             
-            // Download CSV
-            const blob = new Blob([csvContent], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `selected_combinations_{{ game_type }}_${new Date().toISOString().slice(0,10)}.csv`;
-            a.click();
-            window.URL.revokeObjectURL(url);
-        }
-
-        function saveSelected() {
-            if (selectedCombinations.size === 0) {
-                alert('Please select at least one combination to save');
-                return;
-            }
-            
-            alert(`Would save ${selectedCombinations.size} combinations (Feature coming soon!)`);
+            document.getElementById('combinationsData').value = JSON.stringify(selectedData);
+            document.getElementById('exportForm').submit();
         }
 
         // Handle individual checkbox changes
@@ -284,7 +522,7 @@
                     selectedCombinations.add(e.target.dataset.combination);
                 } else {
                     selectedCombinations.delete(e.target.dataset.combination);
-                    document.getElementById('selectAllBtn').innerHTML = '<i class="fas fa-check-square"></i> Select All Combinations';
+                    document.getElementById('selectAllBtn').innerHTML = '<i class="fas fa-check-square"></i> Select All';
                 }
                 updateSelectedCount();
             }
@@ -292,6 +530,17 @@
 
         // Initialize
         updateSelectedCount();
+
+        // Auto-hide alerts after 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(function(alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                });
+            }, 5000);
+        });
     </script>
 </body>
 </html>
